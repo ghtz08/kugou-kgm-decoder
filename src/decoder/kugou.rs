@@ -16,13 +16,10 @@ impl<'a> KuGou<'a> {
     const OWN_KEY_LEN: u64 = 17;
     const PUB_KEY_LEN: u64 = 1170494464;
     const PUB_KEY_LEN_MAGNIFICATION: u64 = 16;
-
-    fn magic_header() -> &'static [u8] {
-        &[
-            0x7c, 0xd5, 0x32, 0xeb, 0x86, 0x02, 0x7f, 0x4b, 0xa8, 0xaf, 0xa6, 0x8e, 0x0f, 0xff,
-            0x99, 0x14, 0x00, 0x04, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-        ]
-    }
+    const MAGIC_HEADER: [u8; 28] = [
+        0x7c, 0xd5, 0x32, 0xeb, 0x86, 0x02, 0x7f, 0x4b, 0xa8, 0xaf, 0xa6, 0x8e, 0x0f, 0xff,
+        0x99, 0x14, 0x00, 0x04, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    ];
 
     fn get_pub_key(index: Range<u64>) -> &'static [u8] {
         // TODO: 对 key 进行惰性解码（需要解决随之带来的静态变量线程安全问题）
@@ -60,7 +57,7 @@ impl<'a> Decoder<'a> for KuGou<'a> {
     fn try_new(mut origin: impl Read + 'a) -> Option<Self> {
         let mut buf = [0; KuGou::HEADER_LEN as usize];
         match origin.read(&mut buf) {
-            Ok(len) if len == buf.len() && buf.starts_with(KuGou::magic_header()) => {
+            Ok(len) if len == buf.len() && buf.starts_with(&KuGou::MAGIC_HEADER) => {
                 let mut own_key = [0; KuGou::OWN_KEY_LEN as usize];
                 own_key[..16].copy_from_slice(&buf[0x1c..0x2c]);
                 Some(KuGou {
