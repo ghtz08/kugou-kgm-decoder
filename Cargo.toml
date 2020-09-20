@@ -1,9 +1,13 @@
 [package]
-name = "kuguo-kgm-decryptor"
+name = "kgm-decoder"
 version = "0.1.0"
 authors = ["TanZhou <tanzhou08@qq.com>"]
 edition = "2018"
+repository = "https://github.com/ghtz08/kuguo-kgm-decoder"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+xz2 = "0.1.6"
+lazy_static = "1.4.0"
+clap = "2.33.3"
