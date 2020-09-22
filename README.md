@@ -4,13 +4,15 @@
 
 解码原理来自博客[孤心浪子 - 闲来无事研究一下酷狗缓存文件kgtemp的加密方式](https://www.cnblogs.com/KMBlog/p/6877752.html)和 [ix64] 的 [unlock-music] 项目中的[酷狗解码实现]。
 
-感谢 [unlock-music] 的作者 [ix64] 提供用于解码的 Key，[unlock-music] 提供了包括酷狗、网易云等多个平台的歌曲文件解码功能并有网页和命令行两种使用方式。
+感谢 [ix64] 提供用于解码的 Key，[ix64] 的 [unlock-music] 项目提供了包括酷狗、网易云等多个平台的歌曲文件解码功能，并有网页和命令行两种使用方式。
 
 [ix64]: https://github.com/ix64
 [unlock-music]: https://github.com/ix64/unlock-music
 [酷狗解码实现]: https://github.com/ix64/unlock-music/blame/1d415cae524dccc565cb339ba1a0225baf0b28fc/src/decrypt/kgm.js#L49-L59
 
 ## 使用方式
+
+> 使用命令 `cargo build --release` 构建或者直接下载发布的二进制文件。
 
 - 针对单个文件
 
