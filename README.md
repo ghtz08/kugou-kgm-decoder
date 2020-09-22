@@ -1,5 +1,13 @@
 # 酷狗混淆的歌曲文件的解码器
 
+[![Badge](https://img.shields.io/badge/link-996.icu-%23FF4D5B.svg?style=flat-square)](https://996.icu)
+[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg?style=flat-square)](/LICENSE)
+![Repo Size](https://img.shields.io/github/repo-size/ghtz08/kuguo-kgm-decoder?style=flat-square)
+![Code Size](https://img.shields.io/github/languages/code-size/ghtz08/kuguo-kgm-decoder?style=flat-square)
+![Lang](https://img.shields.io/badge/lang-rust-brightgreen)
+
+## 介绍
+
 一个命令行工具，可以用来解码酷狗缓存歌曲文件和下载的单曲收费歌曲文件。
 
 解码原理来自博客[孤心浪子 - 闲来无事研究一下酷狗缓存文件kgtemp的加密方式](https://www.cnblogs.com/KMBlog/p/6877752.html)和 [ix64] 的 [unlock-music] 项目中的[酷狗解码实现]。
@@ -43,4 +51,4 @@ kgm-decoder -r <目录名>
 
 ## 许可证
 
-[MIT License](/LICENSE)
+[反 996 许可证版本 1.0](/LICENSE)
