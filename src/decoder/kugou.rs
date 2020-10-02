@@ -159,8 +159,8 @@ fn test_decode() {
     let mut audio = Vec::new();
     let mut right_dat = Vec::new();
 
-    decoder.read_to_end(&mut audio);
-    right_file.read_to_end(&mut right_dat);
+    decoder.read_to_end(&mut audio).unwrap();
+    right_file.read_to_end(&mut right_dat).unwrap();
 
     println!("{} {}", audio.len(), right_dat.len());
     
