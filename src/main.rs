@@ -26,23 +26,23 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
             Ok(val) => match decoder::new(val) {
                 Some(val) => val,
                 None => {
-                    println!("Skip: {:?}", file);
+                    println!(r#"Skip: "{}""#, file.display());
                     continue;
                 }
             },
             Err(_) => {
-                println!("Skip: {:?}", file);
+                println!(r#"Skip: "{}""#, file.display());
                 continue;
             }
         };
         let audio = file.with_extension("mp3");
-        if audio.exists() && !confirm(&format!("File {:?} already exists. Overwrite?", audio)) {
+        if audio.exists() && !confirm(&format!(r#"File "{}" already exists. Overwrite?"#, audio.display())) {
             continue;
         }
         let mut audio = match fs::File::create(&audio) {
             Ok(val) => val,
             Err(err) => {
-                println!("Unable to create file {:?}, {}", audio, err);
+                println!(r#"Unable to create file "{}", {}"#, audio.display(), err);
                 continue;
             }
         };
@@ -54,10 +54,10 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
         }
         if !cfg.keep_file {
             if let Err(err) = fs::remove_file(file) {
-                println!("Warning: Unable to delete file {:?}, {}", file, err);
+                println!(r#"Warning: Unable to delete file "{}", {}"#, file.display(), err);
             }
         }
-        println!("Ok  : {:?}", file);
+        println!(r#"Ok  : "{}""#, file.display());
     }
     0
 }
@@ -68,7 +68,7 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
     let meta = match fs::symlink_metadata(target) {
         Ok(val) => val,
         Err(err) => {
-            println!("Invalid: \"{:?}\", {}", target, err);
+            println!(r#"Invalid: "{}", {}"#, target.display(), err);
             return files;
         }
     };
@@ -77,7 +77,7 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
         if meta.is_file() {
             files.push(Box::from(target));
         } else {
-            println!("Skip: {:?}", target);
+            println!(r#"Skip: "{}""#, target.display());
         }
         return files;
     }
@@ -85,7 +85,7 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
     let all_dir = match fs::read_dir(target) {
         Ok(val) => val,
         Err(err) => {
-            println!("Skip: \"{:?}\", {}", target, err);
+            println!(r#"Skip: "{}", {}"#, target.display(), err);
             return files;
         }
     };
