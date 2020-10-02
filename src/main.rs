@@ -13,9 +13,15 @@ fn main() {
     let files = get_all_files(&Path::new(&cfg.target), cfg.recursive);
 
     println!("{} files found", files.len());
+    let count = decode(&files);
+    println!("Completed {}/{}", count, files.len());
+}
+
+fn decode(files: &Vec<Box<Path>>) -> usize {
+    let cfg = cfg::get();
 
     let mut buf = [0; 16 * 1024];
-    for file in &files {
+    for file in files {
         let mut origin = match fs::File::open(&file) {
             Ok(val) => match decoder::new(val) {
                 Some(val) => val,
@@ -53,6 +59,7 @@ fn main() {
         }
         println!("Ok  : {:?}", file);
     }
+    0
 }
 
 fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
