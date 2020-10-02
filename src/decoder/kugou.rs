@@ -150,3 +150,19 @@ impl Read for Bytes<'_> {
         Ok(len)
     }
 }
+
+#[test]
+fn test_decode() {
+    let mut decoder = KuGou::new(std::fs::File::open("src/assets/test_kugou_kgm.dat").unwrap());
+    let mut right_file = std::fs::File::open("src/assets/test_kugou_kgm_right.dat").unwrap();
+
+    let mut audio = Vec::new();
+    let mut right_dat = Vec::new();
+
+    decoder.read_to_end(&mut audio);
+    right_file.read_to_end(&mut right_dat);
+
+    println!("{} {}", audio.len(), right_dat.len());
+    
+    assert!(audio == right_dat);
+}
