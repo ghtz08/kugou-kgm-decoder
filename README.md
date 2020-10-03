@@ -2,7 +2,7 @@
 
 [![Badge](https://img.shields.io/badge/link-996.icu-%23FF4D5B.svg?style=flat-square)](https://996.icu)
 [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg?style=flat-square)](/LICENSE)
-[![Lang](https://img.shields.io/badge/lang-rust-brightgreen)](https://www.rust-lang.org)
+[![Lang](https://img.shields.io/badge/lang-rust-brightgreen?style=flat-square)](https://www.rust-lang.org)
 ![Repo Size](https://img.shields.io/github/repo-size/ghtz08/kuguo-kgm-decoder?style=flat-square)
 ![Code Size](https://img.shields.io/github/languages/code-size/ghtz08/kuguo-kgm-decoder?style=flat-square)
 
