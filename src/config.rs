@@ -6,7 +6,7 @@ pub struct Config {
     pub target: String,
     pub recursive: bool,
     pub keep_file: bool,
-    pub stdout: bool,
+    // pub stdout: bool,
 }
 
 pub fn get<'a>() -> &'a Config {
@@ -16,13 +16,13 @@ pub fn get<'a>() -> &'a Config {
             let target = args.value_of("target").unwrap().to_string();
             let recursive = args.is_present("recursive");
             let keep_file = args.is_present("keep");
-            let stdout = args.is_present("stdout");
+            // let stdout = args.is_present("stdout");
 
             Config {
                 target,
                 recursive,
                 keep_file,
-                stdout,
+                // stdout,
             }
         })();
     }
@@ -56,12 +56,12 @@ fn parse_args<'a>() -> ArgMatches<'a> {
                 .long("keep")
                 .help("Keep original file"),
         )
-        .arg(
-            Arg::with_name("stdout")
-                .short("c")
-                .long("stdout")
-                .help("Write to standard output and don't delete input files"),
-        )
+        // .arg(
+        //     Arg::with_name("stdout")
+        //         .short("c")
+        //         .long("stdout")
+        //         .help("Write to standard output and don't delete input files"),
+        // )
         .after_help(
             format!(
                 "\
