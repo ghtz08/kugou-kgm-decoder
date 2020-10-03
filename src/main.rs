@@ -20,6 +20,8 @@ fn main() {
 fn decode(files: &Vec<Box<Path>>) -> usize {
     let cfg = cfg::get();
 
+    let mut count = 0usize;
+
     let mut buf = [0; 16 * 1024];
     for file in files {
         let mut origin = match fs::File::open(&file) {
@@ -58,8 +60,9 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
             }
         }
         println!(r#"Ok  : "{}""#, file.display());
+        count += 1;
     }
-    0
+    count
 }
 
 fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
