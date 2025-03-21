@@ -17,8 +17,8 @@ impl<'a> KuGou<'a> {
     const PUB_KEY_LEN: u64 = 1170494464;
     const PUB_KEY_LEN_MAGNIFICATION: u64 = 16;
     const MAGIC_HEADER: [u8; 28] = [
-        0x7c, 0xd5, 0x32, 0xeb, 0x86, 0x02, 0x7f, 0x4b, 0xa8, 0xaf, 0xa6, 0x8e, 0x0f, 0xff,
-        0x99, 0x14, 0x00, 0x04, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x7c, 0xd5, 0x32, 0xeb, 0x86, 0x02, 0x7f, 0x4b, 0xa8, 0xaf, 0xa6, 0x8e, 0x0f, 0xff, 0x99,
+        0x14, 0x00, 0x04, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
     ];
 
     fn get_pub_key(index: Range<u64>) -> &'static [u8] {
@@ -29,10 +29,11 @@ impl<'a> KuGou<'a> {
                 let mut xz_decoder = XzDecoder::new(Bytes::new(KGM_KEY_XZ));
                 let mut key =
                     vec![0; (KuGou::PUB_KEY_LEN / KuGou::PUB_KEY_LEN_MAGNIFICATION) as usize];
-                if let Ok(_) = xz_decoder.read_exact(&mut key) {
-                    key
-                } else {
-                    panic!("Failed to decode the KuGou key")
+                match xz_decoder.read_exact(&mut key) {
+                    Ok(_) => key,
+                    _ => {
+                        panic!("Failed to decode the KuGou key")
+                    }
                 }
             })();
         }
@@ -163,6 +164,6 @@ fn test_decode() {
     right_file.read_to_end(&mut right_dat).unwrap();
 
     println!("{} {}", audio.len(), right_dat.len());
-    
+
     assert!(audio == right_dat);
 }

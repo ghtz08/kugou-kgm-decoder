@@ -38,7 +38,12 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
             }
         };
         let audio = file.with_extension("mp3");
-        if audio.exists() && !confirm(&format!(r#"File "{}" already exists. Overwrite?"#, audio.display())) {
+        if audio.exists()
+            && !confirm(&format!(
+                r#"File "{}" already exists. Overwrite?"#,
+                audio.display()
+            ))
+        {
             continue;
         }
         let mut audio = match fs::File::create(&audio) {
@@ -56,7 +61,11 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
         }
         if !cfg.keep_file {
             if let Err(err) = fs::remove_file(file) {
-                println!(r#"Warning: Unable to delete file "{}", {}"#, file.display(), err);
+                println!(
+                    r#"Warning: Unable to delete file "{}", {}"#,
+                    file.display(),
+                    err
+                );
             }
         }
         println!(r#"Ok  : "{}""#, file.display());

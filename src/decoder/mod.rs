@@ -1,13 +1,13 @@
 mod kugou;
 
 use std::io::Read;
+
 use kugou::KuGou;
 
 pub fn new<'a>(data: impl Read + 'a) -> Option<impl Decoder<'a>> {
-    if let Some(val) = KuGou::try_new(data) {
-        Some(val)
-    } else {
-        None
+    match KuGou::try_new(data) {
+        Some(val) => Some(val),
+        _ => None,
     }
 }
 
