@@ -1,6 +1,6 @@
 [package]
 name = "kgm-decoder"
-version = "0.1.0"
+version = "0.1.1-dev"
 authors = ["TanZhou <tanzhou08@qq.com>"]
 edition = "2024"
 repository = "https://github.com/ghtz08/kuguo-kgm-decoder"
