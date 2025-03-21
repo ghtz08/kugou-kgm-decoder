@@ -9,5 +9,4 @@ repository = "https://github.com/ghtz08/kuguo-kgm-decoder"
 
 [dependencies]
 xz2 = "0.1.6"
-lazy_static = "1.4.0"
 clap = { version = "4.5.32", features = ["derive"] }

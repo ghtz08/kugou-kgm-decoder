@@ -1,6 +1,6 @@
-use lazy_static::lazy_static;
 use std::io::Read;
 use std::ops::Range;
+use std::sync::LazyLock;
 use xz2::read::XzDecoder;
 
 use super::Decoder;
@@ -24,19 +24,16 @@ impl<'a> KuGou<'a> {
     fn get_pub_key(index: Range<u64>) -> &'static [u8] {
         // TODO: 对 key 进行惰性解码（需要解决随之带来的静态变量线程安全问题）
         static KGM_KEY_XZ: &[u8] = include_bytes!("../assets/kugou_key.xz");
-        lazy_static! {
-            static ref KEYS: Vec<u8> = (|| {
-                let mut xz_decoder = XzDecoder::new(Bytes::new(KGM_KEY_XZ));
-                let mut key =
-                    vec![0; (KuGou::PUB_KEY_LEN / KuGou::PUB_KEY_LEN_MAGNIFICATION) as usize];
-                match xz_decoder.read_exact(&mut key) {
-                    Ok(_) => key,
-                    _ => {
-                        panic!("Failed to decode the KuGou key")
-                    }
+        static KEYS: LazyLock<Vec<u8>> = LazyLock::new(|| {
+            let mut xz_decoder = XzDecoder::new(Bytes::new(KGM_KEY_XZ));
+            let mut key = vec![0; (KuGou::PUB_KEY_LEN / KuGou::PUB_KEY_LEN_MAGNIFICATION) as usize];
+            match xz_decoder.read_exact(&mut key) {
+                Ok(_) => key,
+                _ => {
+                    panic!("Failed to decode the KuGou key")
                 }
-            })();
-        }
+            }
+        });
 
         &KEYS[(index.start / KuGou::PUB_KEY_LEN_MAGNIFICATION) as usize
             ..(index.end / KuGou::PUB_KEY_LEN_MAGNIFICATION + 1) as usize]
