@@ -23,7 +23,7 @@ impl<'a> KuGou<'a> {
 
     fn get_pub_key(index: Range<u64>) -> &'static [u8] {
         // TODO: 对 key 进行惰性解码（需要解决随之带来的静态变量线程安全问题）
-        static KGM_KEY_XZ: &[u8] = include_bytes!("../assets/kugou_key.xz");
+        static KGM_KEY_XZ: &[u8] = include_bytes!("../../assets/kugou_key.xz");
         static KEYS: LazyLock<Vec<u8>> = LazyLock::new(|| {
             let mut xz_decoder = XzDecoder::new(Bytes::new(KGM_KEY_XZ));
             let mut key = vec![0; (KuGou::PUB_KEY_LEN / KuGou::PUB_KEY_LEN_MAGNIFICATION) as usize];
@@ -151,8 +151,8 @@ impl Read for Bytes<'_> {
 
 #[test]
 fn test_decode() {
-    let mut decoder = KuGou::new(std::fs::File::open("src/assets/test_kugou_kgm.dat").unwrap());
-    let mut right_file = std::fs::File::open("src/assets/test_kugou_kgm_right.dat").unwrap();
+    let mut decoder = KuGou::new(std::fs::File::open("assets/test_kugou_kgm.dat").unwrap());
+    let mut right_file = std::fs::File::open("assets/test_kugou_kgm_right.dat").unwrap();
 
     let mut audio = Vec::new();
     let mut right_dat = Vec::new();
