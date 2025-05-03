@@ -48,6 +48,10 @@ kgm-decoder -r <目录名>
 
 > 生成的后缀为 .mp3 的文件不一定是 mp3 格式的文件，后续考虑加上自动判断解码后的文件类型这个功能。
 
+## Star 记录
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ghtz08/kugou-kgm-decoder&type=Date)](https://www.star-history.com/#ghtz08/kugou-kgm-decoder&Date)
+
 ## 许可证
 
 [反 996 许可证版本 1.0](/LICENSE)
