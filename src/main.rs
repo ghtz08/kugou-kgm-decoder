@@ -6,6 +6,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 
 use config as cfg;
+use infer::Infer;
 
 fn main() {
     let cfg = cfg::get();
@@ -21,7 +22,6 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
     let cfg = cfg::get();
 
     let mut count = 0usize;
-
     let mut buf = [0; 16 * 1024];
     for file in files {
         let mut origin = match fs::File::open(&file) {
@@ -37,7 +37,26 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
                 continue;
             }
         };
-        let audio = file.with_extension("mp3");
+
+        let mut ext = "mp3";
+        let mut head_buffer = [0; 128];
+        if let Ok(_) = origin.read_exact(&mut head_buffer) {
+            let info = Infer::new();
+            if let Some(kind) = info.get(&head_buffer) {
+                ext = match kind.mime_type() {
+                    "audio/midi" => "midi",
+                    "audio/opus" => "opus",
+                    "audio/flac" => "flac",
+                    "audio/webm" => "weba",
+                    "audio/wav" => "wav",
+                    "audio/ogg" => "ogg",
+                    "audio/aac" => "aac",
+                    _ => "mp3",
+                }
+            }
+        }
+
+        let audio = file.with_extension(ext);
         if audio.exists()
             && !confirm(&format!(
                 r#"File "{}" already exists. Overwrite?"#,
