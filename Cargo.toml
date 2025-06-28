@@ -8,5 +8,6 @@ repository = "https://github.com/ghtz08/kuguo-kgm-decoder"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-xz2 = "0.1.6"
-clap = { version = "4.5.32", features = ["derive"] }
+xz2 = "0.1.7"
+infer = "0.19.0"
+clap = { version = "4.5.40", features = ["derive"] }
