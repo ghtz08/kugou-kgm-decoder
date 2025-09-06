@@ -133,7 +133,7 @@ struct Bytes<'a> {
 }
 
 impl<'a> Bytes<'a> {
-    fn new(data: &[u8]) -> Bytes {
+    fn new(data: &'a [u8]) -> Self {
         Bytes { data, pos: 0 }
     }
 }
