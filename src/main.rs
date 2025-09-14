@@ -40,8 +40,11 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
 
         let mut ext = "mp3";
         let mut head_buffer = [0; 128];
-        if let Ok(_) = origin.read_exact(&mut head_buffer) {
-            let info = Infer::new();
+        origin
+            .read_exact(&mut head_buffer)
+            .expect("read head error");
+        {
+            let info: Infer = Infer::new();
             if let Some(kind) = info.get(&head_buffer) {
                 ext = match kind.mime_type() {
                     "audio/midi" => "midi",
@@ -72,6 +75,7 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
                 continue;
             }
         };
+        audio.write_all(&head_buffer).unwrap();
         while let Ok(len) = origin.read(&mut buf) {
             if len == 0 {
                 break;
