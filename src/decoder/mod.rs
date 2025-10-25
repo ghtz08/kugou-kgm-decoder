@@ -5,10 +5,7 @@ use std::io::Read;
 use kugou::KuGou;
 
 pub fn new<'a>(data: impl Read + 'a) -> Option<impl Decoder<'a>> {
-    match KuGou::try_new(data) {
-        Some(val) => Some(val),
-        _ => None,
-    }
+    KuGou::try_new(data)
 }
 
 pub trait Decoder<'a>: Sized + Read {

@@ -65,7 +65,7 @@ impl<'a> Decoder<'a> for KuGou<'a> {
                 })
             }
             _ => {
-                return None;
+                None
             }
         }
     }

@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use clap::Parser;
 
 pub fn get<'a>() -> &'a Config {
-    static CFG: LazyLock<Config> = LazyLock::new(|| Config::parse());
+    static CFG: LazyLock<Config> = LazyLock::new(Config::parse);
     &CFG
 }
 

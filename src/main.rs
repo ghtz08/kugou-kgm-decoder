@@ -11,7 +11,7 @@ use infer::Infer;
 fn main() {
     let cfg = cfg::get();
 
-    let files = get_all_files(&Path::new(&cfg.target), cfg.recursive);
+    let files = get_all_files(Path::new(&cfg.target), cfg.recursive);
 
     println!("{} files found", files.len());
     let count = decode(&files);
@@ -24,7 +24,7 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
     let mut count = 0usize;
     let mut buf = [0; 16 * 1024];
     for file in files {
-        let mut origin = match fs::File::open(&file) {
+        let mut origin = match fs::File::open(file) {
             Ok(val) => match decoder::new(val) {
                 Some(val) => val,
                 None => {
@@ -80,17 +80,15 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
             if len == 0 {
                 break;
             }
-            audio.write(&buf[..len]).unwrap();
+            audio.write_all(&buf[..len]).unwrap();
         }
-        if !cfg.keep_file {
-            if let Err(err) = fs::remove_file(file) {
+        if !cfg.keep_file && let Err(err) = fs::remove_file(file) {
                 println!(
                     r#"Warning: Unable to delete file "{}", {}"#,
                     file.display(),
                     err
                 );
             }
-        }
         println!(r#"Ok  : "{}""#, file.display());
         count += 1;
     }
@@ -165,14 +163,14 @@ fn confirm(tips: &str) -> bool {
     if len == 1 {
         return true;
     }
-    if buf[len - 1] != '\n' as u8 {
+    if buf[len - 1] != b'\n' {
         while let Ok(len) = std::io::stdin().read(&mut buf[4..]) {
-            if buf[4 + len - 1] == '\n' as u8 {
+            if buf[4 + len - 1] == b'\n' {
                 break;
             }
         }
         return false;
     }
 
-    len == 2 && (buf[0] == 'y' as u8 || buf[0] == 'Y' as u8)
+    len == 2 && (buf[0] == b'y' || buf[0] == b'Y')
 }
