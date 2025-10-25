@@ -2,18 +2,18 @@ name: Rust
 
 on:
   push:
-    branches: [ master, ci ]
+    branches: [ main, ci ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build_and_test:
+    runs-on: debian-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
     - name: Build
       run: cargo build --verbose
     - name: Run tests
