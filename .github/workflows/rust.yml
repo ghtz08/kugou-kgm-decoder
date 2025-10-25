@@ -12,11 +12,16 @@ env:
 jobs:
   build_and_test:
     name: Build and Test
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v5
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ matrix.os }}
     - name: Check formatting
       run: cargo fmt -- --check
     - name: Run Clippy
