@@ -6,6 +6,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 
 use config as cfg;
+use infer::Infer;
 
 fn main() {
     let cfg = cfg::get();
@@ -21,7 +22,6 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
     let cfg = cfg::get();
 
     let mut count = 0usize;
-
     let mut buf = [0; 16 * 1024];
     for file in files {
         let mut origin = match fs::File::open(&file) {
@@ -37,8 +37,35 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
                 continue;
             }
         };
-        let audio = file.with_extension("mp3");
-        if audio.exists() && !confirm(&format!(r#"File "{}" already exists. Overwrite?"#, audio.display())) {
+
+        let mut ext = "mp3";
+        let mut head_buffer = [0; 128];
+        origin
+            .read_exact(&mut head_buffer)
+            .expect("read head error");
+        {
+            let info: Infer = Infer::new();
+            if let Some(kind) = info.get(&head_buffer) {
+                ext = match kind.mime_type() {
+                    "audio/midi" => "midi",
+                    "audio/opus" => "opus",
+                    "audio/flac" => "flac",
+                    "audio/webm" => "weba",
+                    "audio/wav" => "wav",
+                    "audio/ogg" => "ogg",
+                    "audio/aac" => "aac",
+                    _ => "mp3",
+                }
+            }
+        }
+
+        let audio = file.with_extension(ext);
+        if audio.exists()
+            && !confirm(&format!(
+                r#"File "{}" already exists. Overwrite?"#,
+                audio.display()
+            ))
+        {
             continue;
         }
         let mut audio = match fs::File::create(&audio) {
@@ -48,6 +75,7 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
                 continue;
             }
         };
+        audio.write_all(&head_buffer).unwrap();
         while let Ok(len) = origin.read(&mut buf) {
             if len == 0 {
                 break;
@@ -56,7 +84,11 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
         }
         if !cfg.keep_file {
             if let Err(err) = fs::remove_file(file) {
-                println!(r#"Warning: Unable to delete file "{}", {}"#, file.display(), err);
+                println!(
+                    r#"Warning: Unable to delete file "{}", {}"#,
+                    file.display(),
+                    err
+                );
             }
         }
         println!(r#"Ok  : "{}""#, file.display());
