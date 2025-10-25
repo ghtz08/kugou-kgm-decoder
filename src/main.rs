@@ -28,60 +28,116 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
             Ok(val) => match decoder::new(val) {
                 Some(val) => val,
                 None => {
-                    println!(r#"Skip: "{}""#, file.display());
+                    println!(r#"Skip1: "{}""#, file.display());
                     continue;
                 }
             },
             Err(_) => {
-                println!(r#"Skip: "{}""#, file.display());
+                println!(r#"Skip2: "{}""#, file.display());
                 continue;
             }
         };
 
-        let mut ext = "mp3";
-        let mut head_buffer = [0; 128];
-        origin
-            .read_exact(&mut head_buffer)
-            .expect("read head error");
-        {
-            let info: Infer = Infer::new();
-            if let Some(kind) = info.get(&head_buffer) {
-                ext = match kind.mime_type() {
-                    "audio/midi" => "midi",
-                    "audio/opus" => "opus",
-                    "audio/flac" => "flac",
-                    "audio/webm" => "weba",
-                    "audio/wav" => "wav",
-                    "audio/ogg" => "ogg",
-                    "audio/aac" => "aac",
-                    _ => "mp3",
-                }
+        let mut head_buffer = vec![0u8; 8192];
+        let n = match origin.read(&mut head_buffer) {
+            Ok(n) => n,
+            Err(err) => {
+                println!(r#"Read head error: "{}": {}"#, file.display(), err);
+                continue;
             }
+        };
+
+        if n == 0 {
+            println!(r#"SkipEmpty: "{}""#, file.display());
+            continue;
         }
 
-        let audio = file.with_extension(ext);
-        if audio.exists()
+        head_buffer.truncate(n);
+
+        let original_ext = file
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("mp3")
+            .to_string();
+
+        let mut ext = original_ext.clone();
+        if let Some(kind) = Infer::new().get(&head_buffer) {
+            ext = kind.extension().to_string();
+        }
+
+        let stem_os = file
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or_else(|| {
+                file.file_name()
+                    .and_then(|f| f.to_str())
+                    .unwrap_or("output")
+            });
+        let stem = if stem_os.to_lowercase().ends_with(".kgm") {
+            let len = stem_os.len();
+            stem_os[..len - 4].to_string()
+        } else {
+            stem_os.to_string()
+        };
+
+        let out_path = file.with_file_name(format!("{}.{}", stem, ext));
+
+        if out_path.exists()
             && !confirm(&format!(
                 r#"File "{}" already exists. Overwrite?"#,
-                audio.display()
+                out_path.display()
             ))
         {
             continue;
         }
-        let mut audio = match fs::File::create(&audio) {
+
+        let mut audio = match fs::File::create(&out_path) {
             Ok(val) => val,
             Err(err) => {
-                println!(r#"Unable to create file "{}", {}"#, audio.display(), err);
+                println!(r#"Unable to create file "{}", {}"#, out_path.display(), err);
                 continue;
             }
         };
-        audio.write_all(&head_buffer).unwrap();
-        while let Ok(len) = origin.read(&mut buf) {
-            if len == 0 {
-                break;
-            }
-            audio.write(&buf[..len]).unwrap();
+
+        if let Err(err) = audio.write_all(&head_buffer) {
+            println!(
+                r#"Write head error: "{}" -> "{}", {}"#,
+                file.display(),
+                out_path.display(),
+                err
+            );
+            let _ = fs::remove_file(&out_path);
+            continue;
         }
+
+        loop {
+            match origin.read(&mut buf) {
+                Ok(0) => break,
+                Ok(len) => {
+                    if let Err(err) = audio.write_all(&buf[..len]) {
+                        println!(
+                            r#"Write error: "{}" -> "{}", {}"#,
+                            file.display(),
+                            out_path.display(),
+                            err
+                        );
+                        let _ = fs::remove_file(&out_path);
+                        break;
+                    }
+                }
+                Err(err) => {
+                    println!(
+                        r#"Read error while writing: "{}" -> "{}", {}"#,
+                        file.display(),
+                        out_path.display(),
+                        err
+                    );
+                    let _ = fs::remove_file(&out_path);
+                    break;
+                }
+            }
+        }
+
         if !cfg.keep_file {
             if let Err(err) = fs::remove_file(file) {
                 println!(
@@ -91,7 +147,8 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
                 );
             }
         }
-        println!(r#"Ok  : "{}""#, file.display());
+
+        println!(r#"Ok  : "{}" -> "{}""#, file.display(), out_path.display());
         count += 1;
     }
     count
@@ -112,7 +169,7 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
         if meta.is_file() {
             files.push(Box::from(target));
         } else {
-            println!(r#"Skip: "{}""#, target.display());
+            println!(r#"Skip4: "{}""#, target.display());
         }
         return files;
     }
@@ -120,7 +177,7 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
     let all_dir = match fs::read_dir(target) {
         Ok(val) => val,
         Err(err) => {
-            println!(r#"Skip: "{}", {}"#, target.display(), err);
+            println!(r#"Skip5: "{}", {}"#, target.display(), err);
             return files;
         }
     };
@@ -137,7 +194,7 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
         let meta = match entry.metadata() {
             Ok(val) => val,
             Err(err) => {
-                println!("Skip: \"{:?}\", {}", entry, err);
+                println!("Skip6: \"{:?}\", {}", entry, err);
                 continue;
             }
         };
