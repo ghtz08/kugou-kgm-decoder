@@ -82,13 +82,15 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
             }
             audio.write_all(&buf[..len]).unwrap();
         }
-        if !cfg.keep_file && let Err(err) = fs::remove_file(file) {
-                println!(
-                    r#"Warning: Unable to delete file "{}", {}"#,
-                    file.display(),
-                    err
-                );
-            }
+        if !cfg.keep_file
+            && let Err(err) = fs::remove_file(file)
+        {
+            println!(
+                r#"Warning: Unable to delete file "{}", {}"#,
+                file.display(),
+                err
+            );
+        }
         println!(r#"Ok  : "{}""#, file.display());
         count += 1;
     }
