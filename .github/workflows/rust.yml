@@ -10,23 +10,43 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build_and_test:
-    name: Build and Test
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+  linux:
+    name: Linux
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
-    - name: Cache dependencies
+    - name: Checkout
+      uses: actions/checkout@v5
+    - name: Cache
       uses: Swatinem/rust-cache@v2
-      with:
-        key: ${{ matrix.os }}
-    - name: Check formatting
+    - name: Lint
       run: cargo fmt -- --check
-    - name: Run Clippy
+    - name: Clippy
       run: cargo clippy -- -D warnings
     - name: Build
       run: cargo build --release
-    - name: Run tests
+    - name: Tests
       run: cargo test --release
+
+  windows:
+    name: Windows
+    needs: linux
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Tests
+        run: cargo test --release
+
+  macos:
+    name: MacOS
+    needs: linux
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Tests
+        run: cargo test --release
