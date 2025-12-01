@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 mod config;
 mod decoder;
 
@@ -218,10 +219,10 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
 
 fn confirm(tips: &str) -> bool {
     print!("{} (y/n): ", tips);
-    std::io::stdout().flush().unwrap();
+    std::io::stdout().flush().expect("flush stdout failed");
     let mut buf = [0u8; 12];
 
-    let len = std::io::stdin().read(&mut buf).unwrap();
+    let len = std::io::stdin().read(&mut buf).expect("read stdin failed");
     if len == 1 {
         return true;
     }
