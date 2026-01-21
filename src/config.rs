@@ -25,6 +25,8 @@ pub struct Config {
     // Write to standard output and don't delete input files
     // #[clap(short, long)]
     // stdout: bool,
+    #[clap(short = 'e', long, default_value = "")]
+    pub output_extension: String,
 }
 
 fn after_help() -> String {

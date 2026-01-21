@@ -55,16 +55,16 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
 
         head_buffer.truncate(n);
 
-        let original_ext = file
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("mp3")
-            .to_string();
+        let ext = if !cfg.output_extension.is_empty() {
+            cfg.output_extension.as_str()
+        } else {
+            let mut ext = file.extension().and_then(|e| e.to_str()).unwrap_or("mp3");
 
-        let mut ext = original_ext.clone();
-        if let Some(kind) = Infer::new().get(&head_buffer) {
-            ext = kind.extension().to_string();
-        }
+            if let Some(kind) = Infer::new().get(&head_buffer) {
+                ext = kind.extension();
+            }
+            ext
+        };
 
         let stem_os = file
             .file_stem()
