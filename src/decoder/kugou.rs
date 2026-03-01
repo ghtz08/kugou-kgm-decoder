@@ -25,7 +25,7 @@ impl<'a> KuGou<'a> {
         // TODO: 对 key 进行惰性解码（需要解决随之带来的静态变量线程安全问题）
         static KGM_KEY_XZ: &[u8] = include_bytes!("../../assets/kugou_key.xz");
         static KEYS: LazyLock<Vec<u8>> = LazyLock::new(|| {
-            let mut xz_decoder = XzDecoder::new(Bytes::new(KGM_KEY_XZ));
+            let mut xz_decoder = XzDecoder::new(std::io::Cursor::new(KGM_KEY_XZ));
             let mut key = vec![0; (KuGou::PUB_KEY_LEN / KuGou::PUB_KEY_LEN_MAGNIFICATION) as usize];
             match xz_decoder.read_exact(&mut key) {
                 Ok(_) => key,
@@ -121,28 +121,6 @@ impl<'a> Read for KuGou<'a> {
         }
 
         self.pos += len as u64;
-        Ok(len)
-    }
-}
-
-struct Bytes<'a> {
-    data: &'a [u8],
-    pos: usize,
-}
-
-impl<'a> Bytes<'a> {
-    fn new(data: &'a [u8]) -> Self {
-        Bytes { data, pos: 0 }
-    }
-}
-
-impl Read for Bytes<'_> {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let len = std::cmp::min(buf.len(), self.data.len() - self.pos);
-
-        buf[..len].copy_from_slice(&self.data[self.pos..self.pos + len]);
-        self.pos += len;
-
         Ok(len)
     }
 }

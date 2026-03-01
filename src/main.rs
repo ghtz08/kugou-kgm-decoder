@@ -19,12 +19,12 @@ fn main() {
     println!("Completed {}/{}", count, files.len());
 }
 
-fn decode(files: &Vec<Box<Path>>) -> usize {
+fn decode(files: &[Box<Path>]) -> usize {
     let cfg = cfg::get();
 
     let mut count = 0usize;
     let mut buf = [0; 16 * 1024];
-    for file in files {
+    'file_loop: for file in files {
         let mut origin = match fs::File::open(file) {
             Ok(val) => match decoder::new(val) {
                 Some(val) => val,
@@ -123,7 +123,7 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
                             err
                         );
                         let _ = fs::remove_file(&out_path);
-                        break;
+                        continue 'file_loop;
                     }
                 }
                 Err(err) => {
@@ -134,7 +134,7 @@ fn decode(files: &Vec<Box<Path>>) -> usize {
                         err
                     );
                     let _ = fs::remove_file(&out_path);
-                    break;
+                    continue 'file_loop;
                 }
             }
         }
@@ -181,7 +181,11 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
     let all_dir = match fs::read_dir(target) {
         Ok(val) => val,
         Err(err) => {
-            println!(r#"Skip5: "{}", {}"#, target.display(), err);
+            println!(
+                r#"Skip: "{}", failed to read directory: {}"#,
+                target.display(),
+                err
+            );
             return files;
         }
     };
@@ -198,7 +202,7 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
         let meta = match entry.metadata() {
             Ok(val) => val,
             Err(err) => {
-                println!("Skip6: \"{:?}\", {}", entry, err);
+                println!("Skip: failed to read entry metadata: {}", err);
                 continue;
             }
         };
@@ -218,22 +222,21 @@ fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
 }
 
 fn confirm(tips: &str) -> bool {
-    print!("{} (y/n): ", tips);
-    std::io::stdout().flush().expect("flush stdout failed");
-    let mut buf = [0u8; 12];
-
-    let len = std::io::stdin().read(&mut buf).expect("read stdin failed");
-    if len == 1 {
-        return true;
-    }
-    if buf[len - 1] != b'\n' {
-        while let Ok(len) = std::io::stdin().read(&mut buf[4..]) {
-            if buf[4 + len - 1] == b'\n' {
-                break;
-            }
+    loop {
+        print!("{} (y/n): ", tips);
+        std::io::stdout().flush().expect("flush stdout failed");
+        let mut input = String::new();
+        if std::io::stdin().read_line(&mut input).is_err() {
+            return false;
         }
-        return false;
-    }
+        let input = input.trim().to_lowercase();
 
-    len == 2 && (buf[0] == b'y' || buf[0] == b'Y')
+        if input == "y" || input == "yes" {
+            return true;
+        } else if input == "n" || input == "no" {
+            return false;
+        } else {
+            println!("Invalid input, please enter 'y' or 'n'.");
+        }
+    }
 }
