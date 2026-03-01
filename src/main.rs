@@ -3,7 +3,7 @@ mod config;
 mod decoder;
 
 use std::fs;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::path::Path;
 
 use config as cfg;
@@ -20,139 +20,109 @@ fn main() {
 }
 
 fn decode(files: &[Box<Path>]) -> usize {
+    files.iter().filter(|file| decode_file(file)).count()
+}
+
+fn decode_file(file: &Path) -> bool {
     let cfg = cfg::get();
 
-    let mut count = 0usize;
-    let mut buf = [0; 16 * 1024];
-    'file_loop: for file in files {
-        let mut origin = match fs::File::open(file) {
-            Ok(val) => match decoder::new(val) {
-                Some(val) => val,
-                None => {
-                    println!(r#"Skip: "{}", no decoder"#, file.display());
-                    continue;
-                }
-            },
-            Err(_) => {
-                println!(r#"Skip: "{}", file not found"#, file.display());
-                continue;
-            }
-        };
-
-        let mut head_buffer = vec![0u8; 8192];
-        let n = match origin.read(&mut head_buffer) {
-            Ok(n) => n,
-            Err(err) => {
-                println!(r#"Skip: "{}", read head error: {err}"#, file.display());
-                continue;
-            }
-        };
-
-        if n == 0 {
-            println!(r#"Skip: "{}", file is empty"#, file.display());
-            continue;
+    let mut origin = match fs::File::open(file).ok().and_then(decoder::new) {
+        Some(val) => val,
+        None => {
+            println!(r#"Skip: "{}", no decoder"#, file.display());
+            return false;
         }
+    };
 
-        head_buffer.truncate(n);
-
-        let ext = if !cfg.output_extension.is_empty() {
-            cfg.output_extension.as_str()
-        } else {
-            let mut ext = file.extension().and_then(|e| e.to_str()).unwrap_or("mp3");
-
-            if let Some(kind) = Infer::new().get(&head_buffer) {
-                ext = kind.extension();
-            }
-            ext
-        };
-
-        let stem_os = file
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or_else(|| {
-                file.file_name()
-                    .and_then(|f| f.to_str())
-                    .unwrap_or("output")
-            });
-        let stem = if stem_os.to_lowercase().ends_with(".kgm") {
-            let len = stem_os.len();
-            stem_os[..len - 4].to_string()
-        } else {
-            stem_os.to_string()
-        };
-
-        let out_path = file.with_file_name(format!("{}.{}", stem, ext));
-
-        if out_path.exists()
-            && !confirm(&format!(
-                r#"File "{}" already exists. Overwrite?"#,
-                out_path.display()
-            ))
-        {
-            continue;
+    let mut head_buffer = vec![0u8; 8192];
+    let n = match origin.read(&mut head_buffer) {
+        Ok(0) | Err(_) => {
+            println!(r#"Skip: "{}", failed to read file head"#, file.display());
+            return false;
         }
+        Ok(n) => n,
+    };
+    head_buffer.truncate(n);
 
-        let mut audio = match fs::File::create(&out_path) {
-            Ok(val) => val,
-            Err(err) => {
-                println!(r#"Unable to create file "{}", {}"#, out_path.display(), err);
-                continue;
-            }
-        };
+    let ext = infer_extension(file, &head_buffer, &cfg.output_extension);
+    let out_path = build_out_path(file, ext);
 
-        if let Err(err) = audio.write_all(&head_buffer) {
-            println!(
-                r#"Write head error: "{}" -> "{}", {}"#,
-                file.display(),
-                out_path.display(),
-                err
-            );
-            let _ = fs::remove_file(&out_path);
-            continue;
-        }
-
-        loop {
-            match origin.read(&mut buf) {
-                Ok(0) => break,
-                Ok(len) => {
-                    if let Err(err) = audio.write_all(&buf[..len]) {
-                        println!(
-                            r#"Write error: "{}" -> "{}", {}"#,
-                            file.display(),
-                            out_path.display(),
-                            err
-                        );
-                        let _ = fs::remove_file(&out_path);
-                        continue 'file_loop;
-                    }
-                }
-                Err(err) => {
-                    println!(
-                        r#"Read error while writing: "{}" -> "{}", {}"#,
-                        file.display(),
-                        out_path.display(),
-                        err
-                    );
-                    let _ = fs::remove_file(&out_path);
-                    continue 'file_loop;
-                }
-            }
-        }
-
-        if !cfg.keep_file
-            && let Err(err) = fs::remove_file(file)
-        {
-            println!(
-                r#"Warning: Unable to delete file "{}", {}"#,
-                file.display(),
-                err
-            );
-        }
-
-        println!(r#"Ok  : "{}" -> "{}""#, file.display(), out_path.display());
-        count += 1;
+    if out_path.exists()
+        && !confirm(&format!(
+            r#"File "{}" already exists. Overwrite?"#,
+            out_path.display()
+        ))
+    {
+        return false;
     }
-    count
+
+    let mut audio = match fs::File::create(&out_path) {
+        Ok(val) => val,
+        Err(err) => {
+            println!(r#"Unable to create file "{}", {}"#, out_path.display(), err);
+            return false;
+        }
+    };
+
+    if let Err(err) = write_decoded(&mut audio, &head_buffer, &mut origin) {
+        println!(
+            r#"Write error: "{}" -> "{}", {}"#,
+            file.display(),
+            out_path.display(),
+            err
+        );
+        let _ = fs::remove_file(&out_path);
+        return false;
+    }
+
+    if !cfg.keep_file
+        && let Err(err) = fs::remove_file(file)
+    {
+        println!(
+            r#"Warning: Unable to delete file "{}", {}"#,
+            file.display(),
+            err
+        );
+    }
+
+    println!(r#"Ok  : "{}" -> "{}""#, file.display(), out_path.display());
+    true
+}
+
+fn infer_extension<'a>(file: &'a Path, head: &[u8], override_ext: &'a str) -> &'a str {
+    if !override_ext.is_empty() {
+        return override_ext;
+    }
+    if let Some(kind) = Infer::new().get(head) {
+        return kind.extension();
+    }
+    file.extension().and_then(|e| e.to_str()).unwrap_or("mp3")
+}
+
+fn build_out_path(file: &Path, ext: &str) -> std::path::PathBuf {
+    let stem = file
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or_else(|| {
+            file.file_name()
+                .and_then(|f| f.to_str())
+                .unwrap_or("output")
+        });
+
+    // Strip a double extension like "song.kgm" → stem is "song.kgm", output should be "song"
+    const KGM_EXT: &str = ".kgm";
+    let stem = match stem.len().checked_sub(KGM_EXT.len()) {
+        Some(pos) if stem[pos..].eq_ignore_ascii_case(KGM_EXT) => &stem[..pos],
+        _ => stem,
+    };
+
+    file.with_file_name(format!("{}.{}", stem, ext))
+}
+
+fn write_decoded(out: &mut dyn Write, head: &[u8], rest: &mut dyn Read) -> io::Result<()> {
+    out.write_all(head)?;
+    io::copy(rest, out)?;
+    Ok(())
 }
 
 fn get_all_files(target: &Path, recursive: bool) -> Vec<Box<Path>> {
